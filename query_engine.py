@@ -74,9 +74,11 @@ RULES:
 
 
 def _validate_sql(sql: str) -> str | None:
-    stripped = sql.strip().lstrip("-").strip()
-    if not stripped.upper().startswith("SELECT"):
-        return "Generated query is not a SELECT statement."
+    if ";" in sql:
+        return "Generated query contains multiple statements."
+    stripped = sql.strip().lstrip("-").strip().upper()
+    if not (stripped.startswith("SELECT") or stripped.startswith("WITH")):
+        return "Generated query must start with SELECT or WITH."
     if UNSAFE_KEYWORDS.search(sql):
         return "Generated query contains unsafe keywords."
     return None
