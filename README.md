@@ -26,7 +26,7 @@ flowchart LR
 | **SQLite** | Zero-config, file-based, fast for demo scale (default as200 items/repo but changeable in UI) |
 | **OpenAI-compatible proxy** | Flexible and can adapt to different api keys. |
 | **Streamlit** | Rapid prototyping, built-in widgets for progress/metrics/dataframes |
-| **NL→SQL (no embeddings)** | Deterministic, auditable, fast|
+| **NL→SQL (no embeddings)** | Auditable, fast|
 
 ## Data Retrieval & Preparation
 
