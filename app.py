@@ -39,6 +39,17 @@ def get_db_stats(db_path: str) -> dict | None:
         conn.close()
 
 
+def get_repo_names(db_path: str) -> list[str]:
+    if not Path(db_path).exists():
+        return []
+    conn = sqlite3.connect(db_path)
+    try:
+        rows = conn.execute("SELECT full_name FROM repos ORDER BY full_name").fetchall()
+        return [r[0] for r in rows]
+    finally:
+        conn.close()
+
+
 # --- Sidebar ---
 with st.sidebar:
     st.header("Data Ingestion")
@@ -94,6 +105,14 @@ with st.sidebar:
 st.title("GitHub Insights Assistant")
 st.caption("Ask natural-language questions about your ingested GitHub data.")
 
+all_repos = get_repo_names(DEFAULT_DB_PATH)
+repo_filter = st.multiselect(
+    "Filter by repository",
+    options=all_repos,
+    default=all_repos,
+    help="Select which repos to include in the query. Default is all.",
+)
+
 if "question" not in st.session_state:
     st.session_state.question = ""
 if "last_answer" not in st.session_state:
@@ -113,8 +132,9 @@ if st.button("Ask", type="primary") or (question and question != st.session_stat
         if not Path(DEFAULT_DB_PATH).exists():
             st.error("No database found. Please ingest repos first using the sidebar.")
         else:
+            active_filter = repo_filter if set(repo_filter) != set(all_repos) else None
             with st.spinner("Thinking..."):
-                answer = run_async(ask(question, DEFAULT_DB_PATH))
+                answer = run_async(ask(question, DEFAULT_DB_PATH, repo_filter=active_filter))
             st.session_state.last_answer = answer
 
 answer = st.session_state.last_answer

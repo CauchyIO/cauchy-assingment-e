@@ -74,12 +74,17 @@ RULES:
 
 
 def _validate_sql(sql: str) -> str | None:
-    if ";" in sql:
+    normalized = sql.strip()
+    if normalized.endswith(";"):
+        normalized = normalized[:-1].strip()
+
+    if ";" in normalized:
         return "Generated query contains multiple statements."
-    stripped = sql.strip().lstrip("-").strip().upper()
+
+    stripped = normalized.lstrip("-").strip().upper()
     if not (stripped.startswith("SELECT") or stripped.startswith("WITH")):
         return "Generated query must start with SELECT or WITH."
-    if UNSAFE_KEYWORDS.search(sql):
+    if UNSAFE_KEYWORDS.search(normalized):
         return "Generated query contains unsafe keywords."
     return None
 
@@ -95,16 +100,19 @@ def _execute_sql(sql: str, db_path: str) -> list[dict]:
         conn.close()
 
 
-async def ask(question: str, db_path: str = DEFAULT_DB_PATH) -> Answer:
+async def ask(question: str, db_path: str = DEFAULT_DB_PATH, repo_filter: list[str] | None = None) -> Answer:
     """Ask a natural-language question about the ingested GitHub data."""
     answer = Answer(question=question)
 
     try:
         schema = _get_schema()
+        system_content = SQL_SYSTEM_PROMPT.format(schema=schema)
+        if repo_filter:
+            system_content += f"\nOnly consider these repos: {', '.join(repo_filter)}"
         sql_resp = await _client.chat.completions.create(
             model=MODEL,
             messages=[
-                {"role": "system", "content": SQL_SYSTEM_PROMPT.format(schema=schema)},
+                {"role": "system", "content": system_content},
                 {"role": "user", "content": question},
             ],
             temperature=0,
