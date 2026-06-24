@@ -66,6 +66,7 @@ flowchart LR
 - Multi-turn conversation memory
 - LLM-as-judge eval over a golden question set (automated regression)
 - Response caching by (question, db_hash)
+- Add visualisation for some queries where useful. For example; "plot the number of issues per day", generates sql + generates matplotlib and displays
 
 ## Run Instructions
 
@@ -93,6 +94,7 @@ cp .env.example .env
 #   GITHUB_TOKEN=ghp_...
 #   OPENAI_API_KEY=sk-...
 #   OPENAI_BASE_URL=https://your-proxy.example.com/v1
+#   OPENAI_MODEL=azure.gpt-5.1  (or any model your proxy supports)
 ```
 
 ### Run

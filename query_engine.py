@@ -33,7 +33,7 @@ _client = AsyncOpenAI(
     base_url=os.getenv("OPENAI_BASE_URL"),
     api_key=os.getenv("OPENAI_API_KEY"),
 )
-MODEL = "azure.gpt-5.1" #TODO: make this configurable via env var
+MODEL = os.getenv("OPENAI_MODEL", "azure.gpt-5.1")
 
 
 @dataclass
