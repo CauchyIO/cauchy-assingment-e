@@ -1,0 +1,3 @@
+-- SQLite schema for GitHub Insights Assistant.
+-- Tables: repos, issues (issues + PRs unified, distinguished by is_pr).
+-- Comments and reviews intentionally deferred (out of scope for v1).
