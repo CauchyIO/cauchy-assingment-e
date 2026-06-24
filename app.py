@@ -13,7 +13,7 @@ from pathlib import Path
 import streamlit as st
 
 from ingester import DEFAULT_DB_PATH, DEFAULT_REPOS, ingest_repos
-from query_engine import ask
+from query_engine import ask, judge_answer
 
 st.set_page_config(page_title="GitHub Insights", layout="wide")
 
@@ -100,6 +100,13 @@ with st.sidebar:
         if st.button(q, key=f"quick_{q}"):
             st.session_state.question = q
 
+    st.divider()
+    enable_judge = st.checkbox(
+        "Enable LLM-as-judge",
+        value=False,
+        help="Adds ~2s + an extra API call to score answer quality.",
+    )
+
 
 # --- Main Panel ---
 st.title("GitHub Insights Assistant")
@@ -158,3 +165,18 @@ if answer:
         if "url" in df.columns:
             df["url"] = df["url"].apply(lambda u: f"[link]({u})" if u else "")
         st.dataframe(df, use_container_width=True)
+
+    if enable_judge and answer.text and not answer.error:
+        with st.spinner("Judging answer quality..."):
+            verdict = run_async(judge_answer(answer.question, answer.sql, answer.raw_rows, answer.text))
+        if "error" in verdict:
+            st.warning(f"Judge failed: {verdict['error']}")
+        else:
+            st.markdown("### Quality Scores")
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Groundedness", f"{verdict.get('groundedness', '?')}/5")
+            c2.metric("Completeness", f"{verdict.get('completeness', '?')}/5")
+            c3.metric("Citation Quality", f"{verdict.get('citation_quality', '?')}/5")
+            if verdict.get("notes"):
+                with st.expander("Judge notes"):
+                    st.write(verdict["notes"])

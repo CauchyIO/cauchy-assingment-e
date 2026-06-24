@@ -100,6 +100,49 @@ def _execute_sql(sql: str, db_path: str) -> list[dict]:
         conn.close()
 
 
+JUDGE_SYSTEM_PROMPT = """You are a strict evaluator of AI-generated answers about GitHub data.
+
+You will be given:
+- The original question
+- The SQL query used
+- The raw data rows returned
+- The generated answer
+
+Score each dimension from 1 (worst) to 5 (best):
+- groundedness: Do ALL claims in the answer map directly to data in the rows? 5 = every claim supported, 1 = major unsupported claims.
+- completeness: Does the answer address the full question using available data? 5 = fully addressed, 1 = barely touched.
+- citation_quality: Are specific issues/PRs referenced with numbers/URLs from the data? 5 = excellent citations, 1 = no references at all.
+
+Return ONLY valid JSON (no markdown fences):
+{"groundedness": <int>, "completeness": <int>, "citation_quality": <int>, "notes": "<brief explanation>"}
+"""
+
+
+async def judge_answer(question: str, sql: str, rows: list[dict], answer_text: str) -> dict:
+    """Score an answer using LLM-as-judge. Never raises — returns error dict on failure."""
+    try:
+        rows_text = "\n".join(str(r) for r in rows[:MAX_ROWS]) if rows else "(no results)"
+        resp = await _client.chat.completions.create(
+            model=MODEL,
+            messages=[
+                {"role": "system", "content": JUDGE_SYSTEM_PROMPT},
+                {"role": "user", "content": (
+                    f"Question: {question}\n\n"
+                    f"SQL:\n{sql}\n\n"
+                    f"Data rows:\n{rows_text}\n\n"
+                    f"Answer:\n{answer_text}"
+                )},
+            ],
+            temperature=0,
+        )
+        import json
+        raw = resp.choices[0].message.content.strip()
+        raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+        return json.loads(raw)
+    except Exception as e:
+        return {"error": str(e)}
+
+
 async def ask(question: str, db_path: str = DEFAULT_DB_PATH, repo_filter: list[str] | None = None) -> Answer:
     """Ask a natural-language question about the ingested GitHub data."""
     answer = Answer(question=question)
