@@ -6,7 +6,7 @@
 Build a Streamlit app that ingests real GitHub data into SQLite and answers natural-language questions by generating auditable SQL, with every answer backed by clickable evidence (issue/PR numbers + URLs).
 
 ## 2. Scope (chosen explicitly)
-- **2–3 related public repos** (default: `tiangolo/fastapi`, `pydantic/pydantic`).
+- **2–3 related public repos** (default: `fastapi/fastapi`, `pydantic/pydantic`).
 - **Data:** repo metadata, issues, PRs, labels, authors, timestamps, body snippets.
 - **Interface:** single-page Streamlit app with sidebar (ingest + quick insights + stats) and main panel (ask + answer + evidence).
 
